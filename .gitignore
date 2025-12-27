@@ -1,29 +1,32 @@
-# Logs
-*.log
-*.log.*
-/rename-vmid.sh.log
-/rename-vmid.sh.log.*
+# --- Sécurité (CRITIQUE) ---
+# Ignorer absolument les clés SSH générées
+ssh/id_rsa
+ssh/id_rsa.pub
+ssh/known_hosts
 
-# Temp files
-/tmp/
-/*.tmp
-*.swp
-*.swo
-*~
+# Ignorer les fichiers d'environnement et secrets
+.env
+.env.local
+
+# --- Configuration Locale ---
+# Ignorer le fichier de config réel s'il contient des IPs spécifiques
+# (Conseil : commitez un fichier 'config/config.sample.php' à la place)
+config/config.php
+
+# --- Docker ---
+# Ignorer les surcharges locales de docker-compose
+docker-compose.override.yml
+
+# --- PHP & Composer (Standard) ---
+/vendor/
+composer.phar
+composer.lock
+*.log
+error_log
+
+# --- Système & IDE ---
 .DS_Store
 Thumbs.db
-
-# Editor / IDE
-.vscode/
 .idea/
-*.iml
-
-# OS / misc
-*.bak
-*.orig
-*.rej
-
-# Shell history / secrets
-.bash_history
-*.env
-.env.*
+.vscode/
+*.swp
