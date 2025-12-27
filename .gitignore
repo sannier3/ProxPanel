@@ -1,0 +1,29 @@
+# Logs
+*.log
+*.log.*
+/rename-vmid.sh.log
+/rename-vmid.sh.log.*
+
+# Temp files
+/tmp/
+/*.tmp
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Editor / IDE
+.vscode/
+.idea/
+*.iml
+
+# OS / misc
+*.bak
+*.orig
+*.rej
+
+# Shell history / secrets
+.bash_history
+*.env
+.env.*
