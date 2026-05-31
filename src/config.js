@@ -98,6 +98,10 @@ export const config = {
       envStr('WORKSPACE_DIR', fileConfig.workspace?.dir ?? './data/workspaces')
     ),
   },
+  fileExplorer: {
+    sshEnabled: envBool('FILE_EXPLORER_SSH', fileConfig.fileExplorer?.sshEnabled === true),
+    sshUser: envStr('FILE_EXPLORER_SSH_USER', fileConfig.fileExplorer?.sshUser ?? 'root'),
+  },
   rootDir,
   publicDir: path.join(rootDir, 'public'),
 };

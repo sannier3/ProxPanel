@@ -975,6 +975,14 @@ function apiUrl(action, query = '') {
                     case 'storage':
                         container.innerHTML = await getStorageView();
                         break;
+                    case 'file-explorer':
+                        container.innerHTML = '<div class="file-explorer-host"></div>';
+                        if (globalThis.ProxPanelFileExplorer) {
+                            ProxPanelFileExplorer.init(container.querySelector('.file-explorer-host'));
+                        } else {
+                            container.innerHTML = '<p class="cfg-empty">Explorateur indisponible.</p>';
+                        }
+                        break;
                     case 'monitor':
                         container.innerHTML = await getMonitorView();
                         initMonitorView();

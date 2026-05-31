@@ -379,7 +379,7 @@
     dock.innerHTML = `
       <div class="widget-palette-dock-head">
         <h3><i class="fa-solid fa-puzzle-piece"></i> Catalogue</h3>
-        <p>Glissez un widget sur la grille du bureau</p>
+        <p>Glissez sur le bureau</p>
         <input type="search" class="widget-palette-dock-search" id="widget-palette-search" placeholder="Filtrer…" autocomplete="off">
       </div>
       <div class="widget-palette-dock-body" id="widget-palette-dock-body">${groups}</div>`;

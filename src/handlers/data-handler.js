@@ -11,6 +11,7 @@ import { fetchProxmoxTasks } from './tasks-handler.js';
 import { fetchClusterConfigSection } from './cluster-config-handler.js';
 import { mutateClusterConfig } from './cluster-config-mutations-handler.js';
 import { fetchClusterConfigLookups } from './cluster-config-lookups.js';
+import { fetchFileExplorerTree, fetchFileExplorerList } from './file-explorer-handler.js';
 import { QEMU_CONFIG_SCHEMA } from '../lib/qemu-config-schema.js';
 import { getCombinedConfigSchema } from '../lib/guest-config-schema.js';
 
@@ -22,6 +23,8 @@ const VALID_ACTIONS = new Set([
   'cluster-config',
   'cluster-config-mutate',
   'cluster-config-lookups',
+  'file-explorer-tree',
+  'file-explorer-list',
 ]);
 
 async function loadResources(url, ticket, sessionId) {
@@ -618,6 +621,18 @@ export async function handleDataAction(ctx, action, req) {
   if (action === 'cluster-config-lookups') {
     Object.assign(result, await fetchClusterConfigLookups(ctx, req.query || {}));
     result.ok = true;
+  }
+
+  if (action === 'file-explorer-tree') {
+    Object.assign(result, await fetchFileExplorerTree(ctx));
+    result.ok = true;
+  }
+
+  if (action === 'file-explorer-list') {
+    const node = req.query.node ?? '';
+    const dirPath = req.query.path ?? '/';
+    Object.assign(result, await fetchFileExplorerList(ctx, node, dirPath));
+    result.ok = !result.error;
   }
 
   return result;

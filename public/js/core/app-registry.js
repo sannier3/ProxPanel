@@ -72,6 +72,16 @@
       minSize: { width: 520, height: 360 },
     },
     {
+      id: 'file-explorer',
+      title: 'Explorateur',
+      icon: 'fa-folder-tree',
+      category: 'storage',
+      singleton: true,
+      pinned: true,
+      defaultRect: { width: 980, height: 640 },
+      minSize: { width: 720, height: 420 },
+    },
+    {
       id: 'control-panel',
       title: 'Panneau de configuration',
       icon: 'fa-gear',
