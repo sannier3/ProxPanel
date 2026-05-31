@@ -1,32 +1,63 @@
-# --- Sécurité (CRITIQUE) ---
-# Ignorer absolument les clés SSH générées
-ssh/id_rsa
-ssh/id_rsa.pub
-ssh/known_hosts
-
-# Ignorer les fichiers d'environnement et secrets
+# --- Secrets & configuration locale ---
 .env
-.env.local
+.env.*
+!.env.example
+config.json
+ssh/
+*.pem
+*.key
 
-# --- Configuration Locale ---
-# Ignorer le fichier de config réel s'il contient des IPs spécifiques
-# (Conseil : commitez un fichier 'config/config.sample.php' à la place)
-config/config.php
+# --- Archive locale ---
+legacy/
+
+# --- Dépendances Node ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+
+# --- Données runtime (workspaces utilisateurs, conservés en local) ---
+data/workspaces/*
+!data/workspaces/.gitkeep
 
 # --- Docker ---
-# Ignorer les surcharges locales de docker-compose
 docker-compose.override.yml
 
-# --- PHP & Composer (Standard) ---
-/vendor/
-composer.phar
-composer.lock
-*.log
-error_log
+# --- Build / cache ---
+dist/
+build/
+.cache/
+*.tsbuildinfo
 
-# --- Système & IDE ---
+# --- Tests & couverture ---
+coverage/
+.nyc_output/
+
+# --- IDE & éditeurs ---
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json.example
+*.swp
+*.swo
+*~
+
+# --- OS ---
 .DS_Store
 Thumbs.db
-.idea/
-.vscode/
-*.swp
+Desktop.ini
+
+# --- Cursor / historique local ---
+.history/
+.cursor/
+
+# --- Logs ---
+logs/
+*.log
+
+# --- Divers ---
+*.local
+.tmp/
+temp/

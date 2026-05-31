@@ -1,0 +1,34 @@
+# Déploiement depuis GHCR (sans build local)
+#
+#   cp .env.example .env
+#   docker compose -f docker-compose.pull.yml up -d
+#
+# Tags : alpha | latest
+#   PROXPANEL_IMAGE_TAG=latest docker compose -f docker-compose.pull.yml up -d
+
+services:
+  proxpanel:
+    image: ghcr.io/sannier3/proxpanel:${PROXPANEL_IMAGE_TAG:-alpha}
+    pull_policy: always
+    container_name: proxpanel
+    ports:
+      - "${PORT:-8080}:8080"
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 8080
+      WORKSPACE_DIR: /app/data/workspaces
+    volumes:
+      - ./modules:/app/modules:ro
+      - ./data/workspaces:/app/data/workspaces
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 25s

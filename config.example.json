@@ -1,0 +1,33 @@
+{
+  "_comment": "Optionnel - préférez .env (voir .env.example). Priorité : .env > ce fichier.",
+  "prod": false,
+  "debug": false,
+  "port": 8080,
+  "host": "0.0.0.0",
+  "sessionSecret": "changez-moi-en-production",
+  "proxmox": {
+    "url": "https://pve.example.com:8006",
+    "rootUser": "root",
+    "rootPassword": "votre_mot_de_passe_root"
+  },
+  "collector": {
+    "enabled": true,
+    "resourcesIntervalMs": 30000,
+    "maxParallelProxmoxCalls": 20
+  },
+  "vmstats": {
+    "maxPerRequest": 80,
+    "cacheTtlMs": 4000
+  },
+  "realtime": {
+    "enabled": true,
+    "statsPushIntervalMs": 5000
+  },
+  "workspace": {
+    "dir": "./data/workspaces"
+  },
+  "localExec": {
+    "enabled": false,
+    "scriptsPath": "./modules"
+  }
+}

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProxPanel - Web Desktop</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    
+    <link rel="stylesheet" href="/css/app.css">
+</head>
+
+<body class="app-guest">
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="login-overlay">
+        <div class="login-box">
+            <div class="login-logo">
+                <i class="fa-solid fa-layer-group" style="color: var(--accent); font-size: 3rem;"></i>
+                <h1>ProxPanel</h1>
+                <p>Connexion requise</p>
+            </div>
+            
+            <!-- Section URL Proxmox (affichée si URL vide en prod) -->
+            <div id="proxmox-url-section" style="display: none;">
+                <form onsubmit="event.preventDefault(); handleProxmoxUrlValidation();">
+                    <div class="form-group">
+                        <label for="proxmox-url-input">URL du serveur Proxmox</label>
+                        <input type="text" id="proxmox-url-input" class="form-control" 
+                            placeholder="https://proxmox.example.com:8006" autocomplete="off" required>
+                        <small style="color: #6b7280; font-size: 0.75rem; margin-top: 4px; display: block;">
+                            Entrez l'URL de votre serveur Proxmox (sans /api2/json)
+                        </small>
+                    </div>
+                    <button type="submit" class="btn-login">
+                        <i class="fa-solid fa-check"></i> Valider l'URL
+                    </button>
+                </form>
+            </div>
+
+            <!-- Section formulaire de connexion -->
+            <div id="login-form-section" style="display: none;">
+                <!-- Affichage de l'URL validée avec bouton de modification (uniquement si URL pas dans config) -->
+                <div id="proxmox-url-display" style="background: #f3f4f6; padding: 12px; border-radius: 8px; margin-bottom: 20px; display: none; justify-content: space-between; align-items: center;">
+                    <div>
+                        <small style="color: #6b7280; font-size: 0.75rem; display: block;">Serveur Proxmox</small>
+                        <span id="proxmox-url-text" style="font-weight: 600; color: #111827;"></span>
+                    </div>
+                    <button type="button" onclick="showProxmoxUrlInput()" 
+                        style="background: none; border: 1px solid #d1d5db; padding: 6px 12px; border-radius: 6px; cursor: pointer; color: #374151; font-size: 0.85rem;">
+                        <i class="fa-solid fa-pencil"></i> Modifier
+                    </button>
+                </div>
+
+                <form onsubmit="event.preventDefault(); handleLogin();">
+                    <div class="form-group">
+                        <label for="login-username">Nom d'utilisateur</label>
+                        <input type="text" id="login-username" class="form-control" placeholder="admin"
+                            autocomplete="username" required>
+                    </div>
+                    <div id="login-realm-group" class="form-group" style="display: none;">
+                        <label for="login-realm">Realm</label>
+                        <select id="login-realm" class="form-control" required>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Mot de passe</label>
+                        <input type="password" id="login-password" class="form-control" placeholder="••••••••"
+                            autocomplete="current-password" required>
+                    </div>
+                    <button type="submit" class="btn-login">
+                        <i class="fa-solid fa-sign-in-alt"></i> Se connecter
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="desktop" class="desktop">
+        <div class="desktop-wallpaper" aria-hidden="true"></div>
+        <div id="desktop-widgets" class="desktop-widgets"></div>
+        <div id="desktop-icons" class="desktop-icons"></div>
+        <div id="window-layer"></div>
+        <div id="launcher" class="launcher"></div>
+        <div id="widget-picker" class="widget-picker"></div>
+        <aside id="widget-palette-dock" class="widget-palette-dock" hidden aria-label="Catalogue de widgets"></aside>
+        <div id="desktop-context-menu" class="desktop-context-menu" hidden></div>
+        <div id="widget-edit-bar" class="widget-edit-bar" hidden aria-hidden="true">
+            <span><i class="fa-solid fa-puzzle-piece"></i> Mode édition widgets</span>
+            <div class="widget-edit-bar-actions">
+                <button type="button" id="widget-edit-reset" class="widget-edit-btn secondary" title="Réinitialiser"><i class="fa-solid fa-rotate-left"></i></button>
+                <button type="button" id="widget-edit-done" class="widget-edit-btn primary">Terminer</button>
+            </div>
+        </div>
+        <div id="taskbar" class="taskbar">
+            <button type="button" id="launcher-toggle" class="taskbar-launcher" title="Applications">
+                <i class="fa-solid fa-layer-group"></i>
+            </button>
+            <div class="taskbar-apps" id="taskbar-apps"></div>
+            <div class="taskbar-tray">
+                <select id="node-selector" class="taskbar-node-select" title="Filtrer par nœud">
+                    <option value="all">Tous les nœuds</option>
+                </select>
+                <span id="taskbar-clock" class="taskbar-clock"></span>
+                <button type="button" id="taskbar-widgets" class="taskbar-tray-btn" title="Widgets"><i class="fa-solid fa-puzzle-piece"></i></button>
+                <button type="button" id="taskbar-tasks" class="taskbar-tray-btn taskbar-tasks-btn" title="Tâches Proxmox" aria-expanded="false" aria-controls="taskbar-tasks-flyout">
+                    <i class="fa-solid fa-list-check"></i>
+                    <span class="taskbar-tasks-badge" id="taskbar-tasks-badge" hidden>0</span>
+                </button>
+                <button type="button" id="taskbar-minimize-all" class="taskbar-tray-btn" title="Réduire tout"><i class="fa-solid fa-angles-down"></i></button>
+                <button type="button" id="taskbar-user" class="taskbar-user" title="Profil">
+                    <span class="taskbar-user-avatar" id="taskbar-user-avatar">A</span>
+                </button>
+            </div>
+        </div>
+        <div id="taskbar-tasks-flyout" class="taskbar-flyout" hidden aria-label="Tâches Proxmox">
+            <div class="taskbar-flyout-panel" role="dialog">
+                <div class="taskbar-flyout-head">
+                    <h3><i class="fa-solid fa-list-check"></i> Tâches</h3>
+                    <button type="button" class="taskbar-flyout-refresh" id="taskbar-tasks-refresh" title="Actualiser"><i class="fa-solid fa-rotate"></i></button>
+                </div>
+                <div class="taskbar-flyout-body" id="taskbar-tasks-flyout-body"></div>
+                <div class="taskbar-flyout-foot">
+                    <button type="button" class="taskbar-flyout-foot-btn" data-task-flyout-open-app>
+                        <i class="fa-solid fa-up-right-from-square"></i> Ouvrir le gestionnaire de tâches
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div id="taskbar-window-menu" class="desktop-context-menu taskbar-window-menu" hidden></div>
+    </div>
+
+    <!-- Tools Menu Modal -->
+    <div id="tools-menu" class="modal-overlay" onclick="if(event.target === this) closeToolsMenu()">
+        <div class="modal-box" onclick="event.stopPropagation()">
+            <div style="display:flex; justify-content:space-between; margin-bottom:1.5rem; align-items:center;">
+                <h3 style="font-size: 1.25rem; color: #111827;" id="tools-menu-title">Outils</h3>
+                <button onclick="closeToolsMenu()"
+                    style="border:none; background:none; cursor:pointer; font-size:1.5rem; color:#6b7280; padding:0; width:30px; height:30px; display:flex; align-items:center; justify-content:center; border-radius:4px; transition:background 0.2s;"
+                    onmouseover="this.style.background='#f3f4f6'"
+                    onmouseout="this.style.background='transparent'">&times;</button>
+            </div>
+            <div id="tools-menu-content"></div>
+        </div>
+    </div>
+
+    <!-- Backups Modal -->
+    <div id="backups-modal" class="modal-overlay" onclick="if(event.target === this) closeBackupsModal()">
+        <div class="modal-box" onclick="event.stopPropagation()" style="width: 700px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:1.5rem; align-items:center;">
+                <h3 style="font-size: 1.25rem; color: #111827;">Sauvegardes - <span id="backup-vm-name"></span></h3>
+                <button onclick="closeBackupsModal()"
+                    style="border:none; background:none; cursor:pointer; font-size:1.5rem; color:#6b7280; padding:0; width:30px; height:30px; display:flex; align-items:center; justify-content:center; border-radius:4px; transition:background 0.2s;"
+                    onmouseover="this.style.background='#f3f4f6'"
+                    onmouseout="this.style.background='transparent'">&times;</button>
+            </div>
+            <div style="margin-bottom: 1rem; display: flex; gap: 10px;">
+                <button onclick="createBackup()"
+                    style="padding: 8px 16px; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-plus"></i> Nouvelle sauvegarde
+                </button>
+                <select id="backup-storage-select"
+                    style="padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.9rem; cursor: pointer;">
+                    <option value="local">local (pve)</option>
+                    <option value="nas-data">nas-data (synology)</option>
+                </select>
+            </div>
+            <div id="backups-list" style="max-height: 400px; overflow-y: auto;">
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@novnc/novnc@1.4.0/core/rfb.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-attach@0.9.0/lib/xterm-addon-attach.js"></script>
+    <script src="/js/core/proxpanel-core.js"></script>
+    <script src="/js/core/app-registry.js"></script>
+    <script src="/js/core/widget-registry.js"></script>
+    <script src="/js/core/desktop-shell.js"></script>
+    <script src="/js/core/window-manager.js"></script>
+    <script src="/js/config/proxmox-parsers.js"></script>
+    <script src="/js/config/control-panel-registry.js"></script>
+    <script src="/js/config/control-panel-lookups.js"></script>
+    <script src="/js/config/control-panel-schemas.js"></script>
+    <script src="/js/config/control-panel-schemas-extra.js"></script>
+    <script src="/js/config/control-panel-editor.js"></script>
+    <script src="/js/config/control-panel.js"></script>
+    <script src="/js/config/guest-config-registry.js"></script>
+    <script src="/js/guest-config-editor.js"></script>
+    <script type="module" src="/js/entry.js"></script>
+</body>

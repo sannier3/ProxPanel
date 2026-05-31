@@ -1,119 +1,197 @@
 # ProxPanel
 
-**ProxPanel** est un dashboard alternatif léger pour Proxmox VE. Il agit comme un "Middle-end" permettant d'exposer des fonctionnalités simples et sécurisées à vos utilisateurs, tout en conservant la gestion des droits via Proxmox.
+[![Français](https://img.shields.io/badge/lang-Français-blue.svg)](README.md) [![English](https://img.shields.io/badge/lang-English-lightgrey.svg)](README.en.md) [![License](https://img.shields.io/badge/License-MIT-success?style=flat-square)](LICENSE) [![Docker publish](https://github.com/sannier3/ProxPanel/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/sannier3/ProxPanel/actions/workflows/docker-publish.yml)
+
+> **Version alpha** — beaucoup de travail reste à faire. L’interface et l’API évoluent sans garantie de stabilité. **Ne pas utiliser sur un cluster de production critique** sans environnement de test, sauvegardes et compte Proxmox à privilèges limités.
+
+**ProxPanel** est un dashboard alternatif pour [Proxmox VE](https://www.proxmox.com/) : interface type bureau web, connexion à l’API Proxmox, gestion des VM/LXC et outils cluster dans une expérience plus simple que l’UI native.
+
+- Dépôt : **[github.com/sannier3/ProxPanel](https://github.com/sannier3/ProxPanel)**
+- Image Docker : `ghcr.io/sannier3/proxpanel` (tags **`alpha`** et **`latest`**)
 
 ---
 
-## 🚀 Fonctionnalités
+## Avertissements
 
-- **Interface Simplifiée :** Liste claire des VMs et conteneurs avec leur état.
-- **Authentification Transparente :** Connexion via le système de Realm de Proxmox (PAM, PVE, LDAP, AD).
-- **Système de Modules :** Extension des fonctionnalités via des scripts Bash (ex: Renommer une VM, Changer un ID, Reset Disk).
-- **Sécurité :** Isolation via Docker + Utilisation des Tickets API Proxmox + Clés SSH.
+**⚠️ ProxPanel n’est pas un produit fini.** Le dépôt avance vite : de nombreuses zones sont en chantier, partiellement branchées ou sujettes à régression.
 
-## 🛠 Architecture
+| Risque | Détail |
+|--------|--------|
+| **Fonctions visibles ≠ opérationnelles** | Boutons, fenêtres ou entrées du panneau de configuration peuvent apparaître dans l’UI sans être pleinement implémentés, fiables ou testés sur votre version de Proxmox. |
+| **Comportement imprévisible** | Erreurs silencieuses, actions qui échouent à mi-chemin, ou interface qui ne reflète pas l’état réel du cluster. |
+| **Impact sur votre infrastructure** | En mode production (`PROD=true`), l’application appelle l’**API Proxmox** avec les droits du compte connecté : démarrage/arrêt de VM, tâches, et selon les écrans **modification de paramètres cluster ou nœud** — avec un risque réel de **dégrader ou casser** une configuration si vous cliquez sans comprendre. |
+| **Modules locaux (`LOCAL_EXEC`)** | Sur une installation sur le nœud PVE, l’exécution de scripts dans `modules/` peut toucher l’hôte. À n’activer que si vous maîtrisez ces scripts. |
+| **Données et sessions** | Persistance des bureaux (`data/workspaces`), cookies de session : comportement encore perfectible en alpha. |
 
-Le projet repose sur une approche hybride :
-1.  **Frontend (PHP) :** Gère l'affichage et l'authentification API.
-2.  **API Proxmox :** Utilisée pour valider le login et récupérer les infos en lecture seule (liste des VMs).
-3.  **SSH Tunnel :** Utilisé pour exécuter les actions d'écriture complexes via des scripts Bash situés dans les modules.
+**Recommandations :**
 
-## 📋 Prérequis
-
-* Un serveur Proxmox VE (6.x, 7.x ou 8.x).
-* Docker et Docker Compose installés sur l'hôte (ou sur une machine tierce qui a accès au Proxmox).
-
-## 📦 Installation
-
-### 1. Cloner le projet
-```bash
-git clone [https://github.com/votre-repo/proxpanel.git](https://github.com/votre-repo/proxpanel.git)
-cd proxpanel
-
-```
-
-### 2. Générer les clés SSH
-
-Le conteneur Docker a besoin d'une clé SSH pour communiquer avec l'hôte Proxmox et lancer les scripts.
-
-```bash
-# Créer le dossier
-mkdir -p ssh
-
-# Générer la clé (sans mot de passe !)
-ssh-keygen -t rsa -b 4096 -f ssh/id_rsa -q -N ""
-
-```
-
-### 3. Autoriser la clé sur l'hôte Proxmox
-
-Il faut dire à Proxmox d'accepter cette clé.
-
-```bash
-# Copier le contenu de la clé publique
-cat ssh/id_rsa.pub >> /root/.ssh/authorized_keys
-
-```
-
-> **Note de sécurité :** Vous pouvez restreindre cette clé à certaines commandes uniquement dans le fichier authorized_keys si vous souhaitez durcir la sécurité.
-
-### 4. Configuration
-
-Éditez le fichier `docker-compose.yml` ou `config/config.php` si nécessaire pour adapter l'IP de l'hôte (`PROXMOX_HOST`). Par défaut, `172.17.0.1` correspond à l'hôte depuis un conteneur Docker standard.
-
-### 5. Démarrage
-
-```bash
-docker-compose up -d --build
-
-```
-
-Accédez ensuite à : `http://votre-ip-proxmox:8080`
+- Tester d’abord sur un **cluster ou nœud de labo**, avec **snapshots / sauvegardes** à jour.
+- Utiliser un **compte Proxmox dédié** avec des **ACL minimales** (pas `root@pam` en exploration si vous pouvez l’éviter).
+- Garder l’**interface Proxmox native** pour les opérations sensibles tant que vous n’avez pas validé le comportement de ProxPanel.
+- Signaler les bugs via [Issues](https://github.com/sannier3/ProxPanel/issues) plutôt que de supposer qu’une anomalie vient de votre installation.
 
 ---
 
-## 🧩 Créer un Module
+## Aperçu
 
-La force de ProxPanel réside dans sa modularité. Pour ajouter une fonctionnalité, créez un dossier dans `/modules/` (ex: `modules/reset-password/`).
+![Bureau ProxPanel avec moniteur](docs/images/desktop-with-vm-monitoring.png)
 
-Il doit contenir 3 fichiers :
+![Bureau avec consoles](docs/images/desktop-with-consoles.png)
 
-1. **`manifest.json`** : Métadonnées.
-```json
-{
-    "name": "Reset Password",
-    "description": "Réinitialise le mot de passe root."
-}
-
-```
-
-
-2. **`view.php`** : Le formulaire HTML affiché dans le dashboard.
-```html
-<form method="POST">
-    <input type="hidden" name="module" value="reset-password">
-    <input type="hidden" name="action" value="run">
-    <input type="text" name="username" placeholder="Utilisateur">
-    <button type="submit">Reset</button>
-</form>
-
-```
-
-
-3. **`script.sh`** : Le script exécuté sur l'hyperviseur.
-```bash
-#!/bin/bash
-# $1 sera le username envoyé par le formulaire
-qm set 100 --cipassword "reset123" # Exemple simplifié
-echo "Mot de passe réinitialisé pour $1"
-
-```
-
-
+![Panneau de configuration](docs/images/control-panel.png)
 
 ---
 
-## 🔒 Sécurité
+## Fonctionnalités (alpha)
 
-* **Droits API :** ProxPanel respecte les ACLs de Proxmox. Si un utilisateur n'a pas accès à une VM via l'interface officielle, l'API refusera de lui donner les infos sur ProxPanel.
-* **Scripts Bash :** Les scripts sont exécutés en tant que `root` (via la clé SSH). C'est au développeur du module de s'assurer que les inputs sont sanitisés (ce que fait déjà `escapeshellarg` dans le core PHP).
+*Le tableau ci-dessous décrit l’**objectif** du projet, pas l’état de complétude de chaque écran. En alpha, une ligne peut correspondre à une fonction partielle ou en cours.*
+
+| Domaine | Description |
+|---------|-------------|
+| **Bureau** | Widgets, fond d’écran, workspace persisté |
+| **Instances** | Grille VM/LXC, filtres, actions, notes |
+| **Nœuds** | Métriques cluster, shell hyperviseur (terminal nœud) |
+| **Moniteur** | Stats temps réel des machines actives |
+| **Tâches** | Liste, détail en fenêtre, arrêt des tâches |
+| **Stockage** | Datastores |
+| **Panneau de configuration** | Édition sections cluster / nœuds |
+| **Consoles** | VNC (VM), terminal (LXC), shell (nœud PVE) |
+| **Temps réel** | SSE inventaire + stats VM |
+
+---
+
+## Prérequis
+
+- **Node.js** ≥ 20 (installation native), ou **Docker**
+- Cluster **Proxmox VE** avec API HTTPS (`PROD=true`)
+- Mode démo sans cluster : `PROD=false`
+
+---
+
+## Démarrage rapide (Node.js)
+
+```bash
+git clone https://github.com/sannier3/ProxPanel.git
+cd ProxPanel
+cp .env.example .env
+# Éditer .env
+
+npm install
+npm start
+```
+
+→ [http://localhost:8080](http://localhost:8080)
+
+```bash
+npm run dev   # rechargement auto
+```
+
+---
+
+## Docker Compose
+
+### Image publiée (GHCR)
+
+| Tag | Description |
+|-----|-------------|
+| **`alpha`** | Build automatique depuis `main` (recommandé en test) |
+| **`latest`** | Même image que `alpha` pour l’instant ; tag stable lors des releases |
+| **`2.0.0`** | Publié sur tag Git `v2.0.0` |
+
+```bash
+cp .env.example .env
+# PROXMOX_URL, SESSION_SECRET, PROD=true, etc.
+
+docker compose -f docker-compose.pull.yml up -d
+
+PROXPANEL_IMAGE_TAG=latest docker compose -f docker-compose.pull.yml up -d
+```
+
+### Build local
+
+```bash
+docker compose up -d --build
+```
+
+Répertoires montés : `./modules` (scripts), `./data/workspaces` (bureaux utilisateurs persistés sur l’hôte).
+
+Détails : [`deploy/README.md`](deploy/README.md).
+
+---
+
+## CI / publication Docker
+
+Workflow [`.github/workflows/docker-publish.yml`](.github/workflows/docker-publish.yml) : push sur `main` → `:alpha` et `:latest` ; tag `v*` → semver.
+
+Première publication : rendre le package GHCR public (*Packages* → *proxpanel* → *Package settings*).
+
+---
+
+## Configuration
+
+Fichier **`.env`** ([`.env.example`](.env.example)). Priorité : `.env` > `config.json` > défauts.
+
+| Variable | Description |
+|----------|-------------|
+| `PROD` | `true` = API Proxmox réelle |
+| `PROXMOX_URL` | URL PVE (ex. `https://192.168.1.10:8006`) |
+| `SESSION_SECRET` | Secret session (production) |
+| `COLLECTOR_*` / `VMSTATS_*` / `REALTIME_*` | Collecte et temps réel |
+| `WORKSPACE_DIR` | Persistance du bureau |
+| `LOCAL_EXEC` | Modules bash sur l’hôte PVE |
+
+---
+
+## Architecture
+
+```
+public/             Interface statique
+src/                API Node.js (Express, SSE, proxy consoles)
+docs/images/        Captures d’écran
+deploy/             systemd + guide déploiement
+.github/workflows/  Publication Docker
+```
+
+---
+
+## API (aperçu)
+
+| Route | Description |
+|-------|-------------|
+| `GET /api/health` | Santé + `version` / `channel` |
+| `POST /api/auth/login` | Connexion Proxmox |
+| `GET/POST /api/data?action=…` | Données cluster |
+| `GET /api/realtime/events` | SSE |
+
+---
+
+## Déploiement systemd (sans Docker)
+
+```bash
+sudo cp deploy/proxpanel.service /etc/systemd/system/
+sudo systemctl enable --now proxpanel
+```
+
+`PROXMOX_URL=https://127.0.0.1:8006` sur le nœud Proxmox.
+
+---
+
+## Sécurité
+
+- Outil **tiers non officiel** Proxmox — non supporté par Proxmox GmbH ; respecter les ACL PVE.
+- Toute action via l’UI peut avoir des **effets réels** sur le cluster (voir [Avertissements](#avertissements)).
+- HTTPS + `COOKIE_SECURE=true` en production.
+- Ne pas committer `.env` / secrets.
+
+---
+
+## État du projet
+
+| | |
+|--|--|
+| **Version npm** | `2.0.0-alpha` |
+| **Image Docker** | `:alpha`, `:latest` |
+| **Stabilité** | Alpha — nombreuses fonctions incomplètes ; usage à vos risques sur infra réelle |
+| **Maturité** | Développement actif — pas de promesse de compatibilité ni de délai de finalisation |
+
+Contributions et retours via [Issues](https://github.com/sannier3/ProxPanel/issues) bienvenues.
