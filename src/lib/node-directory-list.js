@@ -93,9 +93,9 @@ function listViaSshSpawn(host, user, dirPath) {
   if (result.error || result.status !== 0) return null;
   try {
     const data = JSON.parse(result.stdout.trim());
-    if (data.error) return null;
+    if (data.error || data.ok === false) return null;
     return {
-      entries: mapRawEntries(data.entries, dirPath),
+      entries: mapRawEntries(data.entries || [], dirPath),
       source: IN_DOCKER ? 'ssh' : 'ssh-cluster',
     };
   } catch {
@@ -108,9 +108,9 @@ async function listViaModuleScript(node, dirPath) {
   try {
     const { stdout } = await runModuleScript('file-browser', ['list', node, dirPath]);
     const data = JSON.parse(stdout.trim());
-    if (data.error) return null;
+    if (data.error || data.ok === false) return null;
     return {
-      entries: mapRawEntries(data.entries, dirPath),
+      entries: mapRawEntries(data.entries || [], dirPath),
       source: 'local-exec',
     };
   } catch {

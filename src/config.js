@@ -101,6 +101,8 @@ export const config = {
   fileExplorer: {
     sshEnabled: envBool('FILE_EXPLORER_SSH', fileConfig.fileExplorer?.sshEnabled === true),
     sshUser: envStr('FILE_EXPLORER_SSH_USER', fileConfig.fileExplorer?.sshUser ?? 'root'),
+    maxReadBytes: envInt('FILE_EXPLORER_MAX_READ', fileConfig.fileExplorer?.maxReadBytes ?? 2 * 1024 * 1024),
+    maxUploadBytes: envInt('FILE_EXPLORER_MAX_UPLOAD', fileConfig.fileExplorer?.maxUploadBytes ?? 50 * 1024 * 1024),
   },
   rootDir,
   publicDir: path.join(rootDir, 'public'),

@@ -11,7 +11,7 @@ export function isLocalExecEnabled() {
   return config.localExec.enabled;
 }
 
-export async function runModuleScript(moduleName, args = []) {
+export async function runModuleScript(moduleName, args = [], stdin = null) {
   if (!config.localExec.enabled) {
     throw new Error('Exécution locale désactivée');
   }
@@ -25,11 +25,16 @@ export async function runModuleScript(moduleName, args = []) {
     const child = spawn('bash', [scriptPath, ...args.map(String)], {
       cwd: path.dirname(scriptPath),
       timeout: 120000,
+      env: { ...process.env, FE_MAX_READ: String(config.fileExplorer?.maxReadBytes ?? 2097152) },
     });
     let stdout = '';
     let stderr = '';
     child.stdout.on('data', (d) => { stdout += d; });
     child.stderr.on('data', (d) => { stderr += d; });
+    if (stdin != null) {
+      child.stdin.write(stdin);
+    }
+    child.stdin.end();
     child.on('error', reject);
     child.on('close', (code) => {
       if (code === 0) resolve({ stdout, stderr });

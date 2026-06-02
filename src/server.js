@@ -7,6 +7,7 @@ import authRoutes from './routes/auth.js';
 import apiRoutes from './routes/api.js';
 import realtimeRoutes from './routes/realtime.js';
 import workspaceRoutes from './routes/workspace.js';
+import fileExplorerRoutes from './routes/file-explorer.js';
 import { registerCollectorSession } from './services/collector.js';
 
 /** Désactive le cache navigateur pour l’UI (HTML, JS, CSS) après déploiement. */
@@ -44,6 +45,7 @@ export function createApp() {
   app.use('/api/auth', express.json(), authRoutes);
   app.use('/api/realtime', realtimeRoutes);
   app.use('/api/workspace', workspaceRoutes);
+  app.use('/api/file-explorer', fileExplorerRoutes);
   app.use('/api', apiRoutes);
 
   const publicDir = config.publicDir;

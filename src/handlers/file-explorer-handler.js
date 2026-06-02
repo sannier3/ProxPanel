@@ -1,6 +1,7 @@
 import { proxmoxApiCall } from '../services/proxmox-client.js';
 import { config } from '../config.js';
 import { listDirectoryOnNode, IN_DOCKER } from '../lib/node-directory-list.js';
+import { canModifyFilesystem } from '../lib/node-fs-ops.js';
 
 /** Sous-répertoires par défaut d'un datastore type dir (layout Proxmox). */
 const CONTENT_SUBDIRS = {
@@ -272,6 +273,7 @@ export async function fetchFileExplorerList(ctx, node, rawPath) {
       ),
       source: shellResult.source || 'shell',
       partial: false,
+      canModify: true,
     };
   }
 
@@ -283,6 +285,7 @@ export async function fetchFileExplorerList(ctx, node, rawPath) {
     source: apiResult.source,
     partial: apiResult.partial,
     hint: apiResult.hint || null,
+    canModify: canModifyFilesystem() && !apiResult.partial,
   };
 }
 
